@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Tracker — Login</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0f0f0f;
+  color: #f0f0f0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-box {
+  background: #1a1a1a;
+  border: 1px solid #2e2e2e;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 360px;
+}
+.logo { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.logo span { color: #7c6aff; }
+.subtitle { color: #666; font-size: 13px; margin-bottom: 32px; }
+label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 6px; }
+input {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2e2e2e;
+  color: #f0f0f0;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  font-family: inherit;
+  transition: border .15s;
+}
+input:focus { outline: none; border-color: #7c6aff; }
+.btn {
+  width: 100%;
+  background: #7c6aff;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s;
+}
+.btn:hover { background: #9580ff; }
+.error {
+  background: rgba(248,113,113,.1);
+  border: 1px solid rgba(248,113,113,.3);
+  color: #f87171;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <div class="logo">career<span>.</span></div>
+  <div class="subtitle">Network tracker — sign in to continue</div>
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+  <form method="POST" action="/login">
+    <label>Username</label>
+    <input type="text" name="username" autofocus autocomplete="username">
+    <label>Password</label>
+    <input type="password" name="password" autocomplete="current-password">
+    <button class="btn" type="submit">Sign In</button>
+  </form>
+</div>
+</body>
+</html>

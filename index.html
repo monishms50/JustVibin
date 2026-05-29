@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Tracker</title>
+<style>
+:root {
+  --bg:#f2eeea; --bg2:#e8e2dc; --bg3:#ddd5cc; --bg4:#cec7c0;
+  --border:#d0c9c2; --border2:#c4bdb6;
+  --text:#2a1f18; --text2:#5a4a40; --text3:#9a8880;
+  --accent:#7c5c3e; --accent2:#9a7255; --accent-bg:#ede5dc;
+  --green:#2d6a4f; --green-bg:#e8f4ee;
+  --red:#c0392b; --red-bg:#fdecea;
+  --amber:#b5580a; --amber-bg:#fdf3e3;
+
+  --s-tracking:#3b7fc4;  --s-tracking-bg:#dbeafe;  --s-tracking-text:#1e4d8c;
+  --s-targeting:#7c3aed; --s-targeting-bg:#ede9fe;  --s-targeting-text:#5b21b6;
+  --s-applied:#2d6a4f;   --s-applied-bg:#d1fae5;    --s-applied-text:#065f46;
+  --s-interview:#b5580a; --s-interview-bg:#fef3c7;  --s-interview-text:#78350f;
+  --s-offer:#1a6b3c;     --s-offer-bg:#d1fae5;      --s-offer-text:#064e3b;
+  --s-rejected:#c0392b;  --s-rejected-bg:#fee2e2;   --s-rejected-text:#991b1b;
+  --s-closed:#8a8078;    --s-closed-bg:#e7e3df;      --s-closed-text:#4a3f38;
+  --s-warm:#c05c0a;      --s-warm-bg:#ffedd5;        --s-warm-text:#7c2d12;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5}
+
+.app{display:flex;min-height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 0;position:fixed;height:100vh;z-index:10}
+.logo{padding:0 20px 26px;font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.logo span{color:var(--accent)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;margin:0 8px;border-radius:7px;cursor:pointer;color:var(--text3);font-size:16px;font-weight:500;transition:all .15s;letter-spacing:-.1px}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);background:var(--accent-bg);font-weight:600}
+.nav-icon{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ── Main ── */
+.main{margin-left:200px;flex:1;padding:28px 32px}
+.panel{display:none}.panel.active{display:block}
+.page-title{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px;margin-bottom:2px}
+.page-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
+
+/* ── Stats bar ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.stat-item{background:var(--bg2);padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.stat-value{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1.1}
+
+/* ── Active Positions section ── */
+.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+.ap-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.section-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;flex-shrink:0}
+.pipeline-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.pipe-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;font-size:11px;white-space:nowrap}
+.pipe-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.pipe-count{font-weight:700;color:var(--text)}
+.pipe-name{color:var(--text3)}
+.ap-controls{display:flex;gap:6px;flex-shrink:0}
+.mini-search{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:4px 9px;border-radius:5px;font-size:11px;font-family:inherit;width:120px}
+.mini-search:focus{outline:none;border-color:var(--accent)}
+.mini-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:4px 7px;border-radius:5px;font-size:11px;font-family:inherit;cursor:pointer}
+.mini-select:focus{outline:none;border-color:var(--accent)}
+
+/* ── Position card grid ── */
+.pos-grid-wrap{height:345px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bg4) transparent}
+.pos-grid-wrap::-webkit-scrollbar{width:4px}
+.pos-grid-wrap::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(242px,1fr));gap:9px;padding-right:3px}
+
+.pos-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:0;cursor:pointer;transition:border-color .15s,background .15s;
+  display:flex;flex-direction:column;min-height:196px;
+  overflow:hidden;position:relative;
+}
+.pos-card:hover{background:var(--bg4)}
+.pos-card-bar{height:4px;width:100%;flex-shrink:0;border-radius:0}
+.pos-card-inner{padding:12px 13px;display:flex;flex-direction:column;flex:1;min-height:0}
+
+.pos-card-top{flex:1;display:flex;flex-direction:column}
+.pos-company-row{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.pos-company{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+.pos-company-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pos-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px}
+.pos-note{font-size:11px;color:var(--text3);font-style:italic;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+
+/* Pinned footer — always at bottom */
+.pos-card-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border2)}
+.pos-deadline{font-size:10px;font-weight:600}
+.pos-deadline.urgent{color:var(--red)}
+.pos-deadline.soon{color:var(--amber)}
+.pos-deadline.ok{color:var(--text3)}
+.pos-deadline.none{color:var(--text3);font-style:italic;font-weight:400}
+
+/* ── Pills ── */
+.pill{display:inline-flex;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;white-space:nowrap}
+.pill-tracking  {background:var(--s-tracking-bg);color:var(--s-tracking-text)}
+.pill-targeting {background:var(--s-targeting-bg);color:var(--s-targeting-text)}
+.pill-applied   {background:var(--s-applied-bg);color:var(--s-applied-text)}
+.pill-interview {background:var(--s-interview-bg);color:var(--s-interview-text)}
+.pill-offer     {background:var(--s-offer-bg);color:var(--s-offer-text)}
+.pill-rejected  {background:var(--s-rejected-bg);color:var(--s-rejected-text)}
+.pill-closed    {background:var(--s-closed-bg);color:var(--s-closed-text)}
+.pill-warm      {background:var(--s-warm-bg);color:var(--s-warm-text)}
+
+.ref-pill{padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.ref-pill.has{background:var(--green-bg);color:var(--green)}
+.ref-pill.none{background:var(--bg4);color:var(--text3)}
+
+.w-pill{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500}
+.w-Stranger{background:#e7e3df;color:#6b5e56}
+.w-Connected{background:#dbeafe;color:#1e4d8c}
+.w-Talking{background:#fef3c7;color:#78350f}
+.w-RapportBuilt{background:#ede9fe;color:#5b21b6}
+.w-ReferralAsked{background:#fce7f3;color:#9d174d}
+.w-Referred{background:var(--green-bg);color:var(--green)}
+
+/* ── Follow-up rows ── */
+.fu-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.fu-row{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px}
+.fu-row:last-child{border-bottom:none}
+.fu-bar{width:3px;border-radius:2px;min-height:32px;flex-shrink:0;margin-top:2px}
+.fu-name{font-size:13px;font-weight:600;cursor:pointer;color:var(--text);transition:color .15s}
+.fu-name:hover{color:var(--accent)}
+.fu-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.fu-comment{font-size:11px;color:var(--text2);margin-top:3px;font-style:italic}
+.fu-label{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.fu-overdue{background:var(--red-bg);color:var(--red)}
+.fu-today{background:var(--amber-bg);color:var(--amber)}
+.fu-future{background:var(--green-bg);color:var(--green)}
+
+/* ── Buttons ── */
+.btn{padding:7px 14px;border-radius:7px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text3)}.btn-ghost:hover{color:var(--text);border-color:var(--text3)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-icon{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:3px 7px;border-radius:5px;font-family:inherit;transition:all .15s}
+.btn-icon:hover{color:var(--red);background:var(--red-bg)}
+.btn-danger-soft{background:var(--red-bg);color:var(--red);border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-weight:500}
+.form-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 12px;border-radius:7px;font-size:13px;font-family:inherit;width:100%;transition:border .15s}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input option{background:var(--bg2)}
+textarea.form-input{resize:vertical;min-height:72px}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 12px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600}
+td{padding:11px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,0,0,.02)}
+
+/* ── Card ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:18px 20px}
+.card-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+
+/* ── Company grid ── */
+.company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.company-card{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:16px 18px;cursor:pointer;transition:border-color .15s;position:relative;overflow:hidden}
+.company-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:0;transition:opacity .15s}
+.company-card:hover{border-color:var(--accent)}.company-card:hover::before{opacity:1}
+.co-name{font-size:14px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.co-meta{font-size:11px;color:var(--text3);margin-bottom:10px}
+.co-stats{display:flex;gap:14px;font-size:11px;color:var(--text3)}
+.co-stats strong{color:var(--text);font-weight:600}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:9px 18px;font-size:13px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;font-weight:500}
+.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── Contact rows ── */
+.contact-row{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);gap:12px}
+.contact-row:last-child{border-bottom:none}
+.co-contact-name{font-size:13px;font-weight:600;cursor:pointer;transition:color .15s;color:var(--text)}
+.co-contact-name:hover{color:var(--accent)}
+.co-contact-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.co-contact-links{margin-top:5px;display:flex;gap:10px}
+.co-contact-links a{color:var(--accent);font-size:11px;text-decoration:none;font-weight:500}
+.co-contact-links a:hover{text-decoration:underline}
+.contact-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+
+/* ── Intel / Interactions ── */
+.intel-entry{padding:12px 0;border-bottom:1px solid var(--border)}
+.intel-entry:last-child{border-bottom:none}
+.intel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.intel-source{font-size:11px;font-weight:600;color:var(--accent)}
+.intel-date{font-size:11px;color:var(--text3)}
+.intel-note{font-size:13px;color:var(--text);line-height:1.5}
+.interaction{padding:11px 0;border-bottom:1px solid var(--border)}
+.interaction:last-child{border-bottom:none}
+.int-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.int-type{font-size:11px;font-weight:600;color:var(--accent)}
+.int-date{font-size:11px;color:var(--text3)}
+.int-notes{font-size:13px;color:var(--text);margin-bottom:2px}
+.int-next{font-size:11px;color:var(--text3)}
+.ref-chip-small{display:inline-flex;align-items:center;gap:4px;background:var(--green-bg);color:var(--green);border:1px solid rgba(45,106,79,.2);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500;margin:2px}
+
+/* ── Detail ── */
+.detail-back{display:inline-flex;align-items:center;gap:5px;color:var(--text3);cursor:pointer;font-size:13px;margin-bottom:10px;transition:color .15s}
+.detail-back:hover{color:var(--text)}
+.detail-title{font-size:22px;font-weight:700;letter-spacing:-.4px;margin-bottom:6px;color:var(--text)}
+.detail-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.detail-meta span{font-size:12px;color:var(--text3)}
+.detail-why{color:var(--text2);font-size:13px;font-style:italic;margin-bottom:20px;border-left:2px solid var(--border2);padding-left:12px;line-height:1.5}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(42,31,24,.45);z-index:200;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:26px 28px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(42,31,24,.18)}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:20px;color:var(--text)}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+
+/* ── Misc ── */
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filters .form-input{width:auto;flex:1;min-width:130px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
+.empty-icon{font-size:22px;margin-bottom:8px;opacity:.4}
+.notes-cell{font-size:11px;color:var(--text3);font-style:italic;max-width:160px}
+.status-note-cell{font-size:11px;color:var(--text3);font-style:italic;margin-top:2px}
+.row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:12px 16px;border-radius:9px;font-size:13px;font-weight:500;transform:translateY(60px);opacity:0;transition:all .25s;z-index:999;box-shadow:0 8px 24px rgba(42,31,24,.15);display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="sidebar">
+  <div class="logo">career<span>.</span></div>
+  <div class="nav-item active" data-panel="dashboard" onclick="showPanel('dashboard')">
+    <div class="nav-icon" style="background:var(--accent);opacity:.7"></div> Dashboard
+  </div>
+  <div class="nav-item" data-panel="companies" onclick="showPanel('companies')">
+    <div class="nav-icon" style="background:var(--text3)"></div> Companies
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="panel active" id="panel-dashboard">
+  <div class="page-title">Dashboard</div>
+  <div class="page-sub" id="dash-date"></div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-label">Companies</div><div class="stat-value" id="s-companies">—</div></div>
+    <div class="stat-item"><div class="stat-label">Contacts</div><div class="stat-value" id="s-contacts">—</div></div>
+    <div class="stat-item"><div class="stat-label">Positions</div><div class="stat-value" id="s-positions">—</div></div>
+    <div class="stat-item"><div class="stat-label">Active</div><div class="stat-value" id="s-active">—</div></div>
+  </div>
+
+  <!-- Active Positions — pipeline merged into header -->
+  <div class="section-card">
+    <div class="ap-header">
+      <div class="section-title">🎯 Active Positions</div>
+      <div class="pipeline-chips" id="pipeline"></div>
+      <div class="ap-controls">
+        <input class="mini-search" id="pos-search" placeholder="Search..." oninput="filterPositions()">
+        <select class="mini-select" id="pos-sort" onchange="filterPositions()">
+          <option value="deadline">By Deadline</option>
+          <option value="company">By Company</option>
+          <option value="status">By Status</option>
+        </select>
+      </div>
+    </div>
+    <div class="pos-grid-wrap">
+      <div class="pos-grid" id="active-pos-list"></div>
+      <div id="no-active-pos" class="empty" style="display:none;"><div class="empty-icon">🎯</div>No active positions yet</div>
+    </div>
+  </div>
+
+  <!-- Follow-ups -->
+  <div class="section-card">
+    <div class="fu-section-head"><div class="section-title">⚡ Follow-ups Due</div></div>
+    <div id="due-list"></div>
+    <div id="no-due" class="empty" style="display:none;">No follow-ups due. You're on top of it 👌</div>
+  </div>
+</div>
+
+<!-- COMPANIES -->
+<div class="panel" id="panel-companies">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
+    <div><div class="page-title">Companies</div><div class="page-sub" id="company-count"></div></div>
+    <button class="btn btn-primary" onclick="openModal('modal-add-company')">+ Add Company</button>
+  </div>
+  <div class="filters">
+    <input type="text" class="form-input" placeholder="Search companies..." id="company-search" oninput="loadCompanies()">
+    <select class="form-input" id="company-status-filter" onchange="loadCompanies()">
+      <option value="">All Statuses</option>
+      <option>Tracking</option><option>Warm</option><option>Active</option><option>Closed</option>
+    </select>
+  </div>
+  <div class="company-grid" id="company-grid"></div>
+</div>
+
+<!-- COMPANY DETAIL -->
+<div class="panel" id="panel-company-detail">
+  <div class="detail-back" onclick="showPanel('companies')">← Back to Companies</div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+    <div>
+      <div class="detail-title" id="cd-name"></div>
+      <div class="detail-meta"><span id="cd-status-badge"></span><span id="cd-industry"></span><span id="cd-size"></span><span id="cd-location"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-ghost btn-sm" onclick="openEditCompany()">Edit</button>
+      <button class="btn-danger-soft btn-sm" onclick="deleteCompany()">Delete</button>
+    </div>
+  </div>
+  <div class="detail-why" id="cd-why" style="display:none;"></div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('positions',this)">Positions</button>
+    <button class="tab" onclick="switchTab('contacts',this)">Contacts</button>
+    <button class="tab" onclick="switchTab('intelligence',this)">Intelligence</button>
+  </div>
+  <div class="tab-panel active" id="tab-positions">
+    <div class="row-head"><div></div><button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-position')">+ Add Position</button></div>
+    <div class="card" style="padding:0;"><div class="tbl-wrap"><table><thead><tr><th>Title</th><th>Dept</th><th>Deadline</th><th>Status</th><th>Referrals</th><th>Notes</th><th></th></tr></thead><tbody id="cd-positions"></tbody></table></div><div id="no-positions" class="empty" style="display:none;"><div class="empty-icon">📋</div>No positions yet</div></div>
+  </div>
+  <div class="tab-panel" id="tab-contacts">
+    <div class="row-head"><div></div><button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-contact')">+ Add Contact</button></div>
+    <div class="card" style="padding:0 20px;"><div id="cd-contacts"></div><div id="no-contacts" class="empty" style="display:none;"><div class="empty-icon">👤</div>No contacts yet</div></div>
+  </div>
+  <div class="tab-panel" id="tab-intelligence">
+    <div class="row-head"><div></div><button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-intel')">+ Add Insight</button></div>
+    <div class="card" style="padding:0 20px;"><div id="cd-intelligence"></div><div id="no-intelligence" class="empty" style="display:none;"><div class="empty-icon">🧠</div>No insights yet</div></div>
+  </div>
+</div>
+
+<!-- CONTACT DETAIL -->
+<div class="panel" id="panel-contact-detail">
+  <div class="detail-back" onclick="goBackToCompany()">← Back to Company</div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div class="detail-title" id="ctd-name"></div>
+      <div style="font-size:13px;color:var(--text3);margin-top:2px;" id="ctd-role-company"></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="ctd-badges"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-ghost btn-sm" onclick="openEditContact()">Edit</button>
+      <button class="btn-danger-soft btn-sm" onclick="deleteContact()">Delete</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;" id="ctd-links"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+    <div class="card">
+      <div class="row-head" style="margin-bottom:12px;"><div class="card-title" style="margin:0;">Interaction Log</div><button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-interaction')">+ Log</button></div>
+      <div id="ctd-interactions"></div>
+      <div id="no-interactions" class="empty" style="display:none;"><div class="empty-icon">💬</div>No interactions yet</div>
+    </div>
+    <div class="card">
+      <div class="row-head" style="margin-bottom:12px;"><div class="card-title" style="margin:0;">Referrals</div><button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-referral')">+ Link</button></div>
+      <div id="ctd-referrals"></div>
+      <div id="no-referrals" class="empty" style="display:none;"><div class="empty-icon">🤝</div>No referrals yet</div>
+      <div class="divider"></div>
+      <div class="card-title">Follow-up Reminder</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="date" class="form-input" id="ctd-followup" style="flex:1;">
+        <button class="btn btn-ghost btn-sm" onclick="saveFollowup()">Save</button>
+        <button class="btn-icon" onclick="clearFollowup()">✕</button>
+      </div>
+      <textarea class="form-input" id="ctd-followup-comment" rows="2" placeholder="Why are you following up?"></textarea>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="ctd-followup-current"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row-head" style="margin-bottom:12px;"><div class="card-title" style="margin:0;">Notes</div><button class="btn btn-ghost btn-sm" onclick="saveContactNotes()">Save</button></div>
+    <textarea class="form-input" id="ctd-notes" rows="4" placeholder="Anything useful about this person..."></textarea>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODALS -->
+<div class="overlay" id="modal-add-company"><div class="modal"><div class="modal-title">Add Company</div><div class="form-grid"><div class="form-group full"><label class="form-label">Company Name *</label><input class="form-input" id="ac-name" placeholder="e.g. Google"></div><div class="form-group"><label class="form-label">Industry</label><input class="form-input" id="ac-industry" placeholder="e.g. Tech, Finance"></div><div class="form-group"><label class="form-label">Size</label><select class="form-input" id="ac-size"><option value="">— select —</option><option>Startup</option><option>Mid-size</option><option>Large</option><option>FAANG</option></select></div><div class="form-group"><label class="form-label">Location</label><input class="form-input" id="ac-location" placeholder="e.g. NYC, Remote"></div><div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ac-status"><option>Tracking</option><option>Warm</option><option>Active</option><option>Closed</option></select></div><div class="form-group full"><label class="form-label">Why this company?</label><textarea class="form-input" id="ac-why" placeholder="What excites you about working here..."></textarea></div><div class="form-group full"><label class="form-label">Notes</label><input class="form-input" id="ac-notes"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-company')">Cancel</button><button class="btn btn-primary" onclick="addCompany()">Add Company</button></div></div></div>
+<div class="overlay" id="modal-edit-company"><div class="modal"><div class="modal-title">Edit Company</div><div class="form-grid"><div class="form-group full"><label class="form-label">Company Name *</label><input class="form-input" id="ec-name"></div><div class="form-group"><label class="form-label">Industry</label><input class="form-input" id="ec-industry"></div><div class="form-group"><label class="form-label">Size</label><select class="form-input" id="ec-size"><option value="">— select —</option><option>Startup</option><option>Mid-size</option><option>Large</option><option>FAANG</option></select></div><div class="form-group"><label class="form-label">Location</label><input class="form-input" id="ec-location"></div><div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ec-status"><option>Tracking</option><option>Warm</option><option>Active</option><option>Closed</option></select></div><div class="form-group full"><label class="form-label">Why this company?</label><textarea class="form-input" id="ec-why"></textarea></div><div class="form-group full"><label class="form-label">Notes</label><input class="form-input" id="ec-notes"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-edit-company')">Cancel</button><button class="btn btn-primary" onclick="saveEditCompany()">Save</button></div></div></div>
+<div class="overlay" id="modal-add-position"><div class="modal"><div class="modal-title">Add Position</div><div class="form-grid"><div class="form-group full"><label class="form-label">Job Title *</label><input class="form-input" id="ap-title" placeholder="e.g. Security Engineer"></div><div class="form-group full"><label class="form-label">Job URL</label><input class="form-input" id="ap-url" placeholder="https://..."></div><div class="form-group"><label class="form-label">Department</label><input class="form-input" id="ap-dept" placeholder="e.g. Security"></div><div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="ap-date"></div><div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ap-status"><option>Tracking</option><option>Targeting</option><option>Applied</option><option>Interview</option><option>Offer</option><option>Rejected</option><option>Closed</option></select></div><div class="form-group full"><label class="form-label">Status Note</label><input class="form-input" id="ap-status-note" placeholder="e.g. Waiting for referral before applying"></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-input" id="ap-notes" placeholder="Anything else about this role..."></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-position')">Cancel</button><button class="btn btn-primary" onclick="addPosition()">Add Position</button></div></div></div>
+<div class="overlay" id="modal-edit-position"><div class="modal"><div class="modal-title">Edit Position</div><div class="form-grid"><div class="form-group full"><label class="form-label">Job Title *</label><input class="form-input" id="ep-title"></div><div class="form-group full"><label class="form-label">Job URL</label><input class="form-input" id="ep-url"></div><div class="form-group"><label class="form-label">Department</label><input class="form-input" id="ep-dept"></div><div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="ep-date"></div><div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ep-status"><option>Tracking</option><option>Targeting</option><option>Applied</option><option>Interview</option><option>Offer</option><option>Rejected</option><option>Closed</option></select></div><div class="form-group full"><label class="form-label">Status Note</label><input class="form-input" id="ep-status-note"></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-input" id="ep-notes"></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-edit-position')">Cancel</button><button class="btn btn-primary" onclick="saveEditPosition()">Save</button></div></div></div>
+<div class="overlay" id="modal-add-contact"><div class="modal"><div class="modal-title">Add Contact</div><div class="form-grid"><div class="form-group full"><label class="form-label">Name *</label><input class="form-input" id="act-name" placeholder="Full name"></div><div class="form-group"><label class="form-label">Role / Title</label><input class="form-input" id="act-role" placeholder="e.g. Senior SWE"></div><div class="form-group"><label class="form-label">How you know them</label><select class="form-input" id="act-source"><option>Cold</option><option>Met Online</option><option>Mutual Connection</option><option>Friend</option></select></div><div class="form-group full"><label class="form-label">LinkedIn URL</label><input class="form-input" id="act-linkedin" placeholder="https://linkedin.com/in/..."></div><div class="form-group full"><label class="form-label">Email</label><input class="form-input" id="act-email" type="email" placeholder="name@company.com"></div><div class="form-group"><label class="form-label">Warmth</label><select class="form-input" id="act-warmth"><option>Stranger</option><option>Connected</option><option>Talking</option><option>Rapport Built</option><option>Referral Asked</option><option>Referred</option></select></div><div class="form-group"><label class="form-label">Referral Likelihood</label><select class="form-input" id="act-likelihood"><option>High</option><option selected>Medium</option><option>Low</option></select></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-input" id="act-notes" placeholder="How you met, shared interests..."></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-contact')">Cancel</button><button class="btn btn-primary" onclick="addContact()">Add Contact</button></div></div></div>
+<div class="overlay" id="modal-edit-contact"><div class="modal"><div class="modal-title">Edit Contact</div><div class="form-grid"><div class="form-group full"><label class="form-label">Name *</label><input class="form-input" id="ect-name"></div><div class="form-group"><label class="form-label">Role / Title</label><input class="form-input" id="ect-role"></div><div class="form-group"><label class="form-label">How you know them</label><select class="form-input" id="ect-source"><option>Cold</option><option>Met Online</option><option>Mutual Connection</option><option>Friend</option></select></div><div class="form-group full"><label class="form-label">LinkedIn URL</label><input class="form-input" id="ect-linkedin"></div><div class="form-group full"><label class="form-label">Email</label><input class="form-input" id="ect-email" type="email"></div><div class="form-group"><label class="form-label">Warmth</label><select class="form-input" id="ect-warmth"><option>Stranger</option><option>Connected</option><option>Talking</option><option>Rapport Built</option><option>Referral Asked</option><option>Referred</option></select></div><div class="form-group"><label class="form-label">Referral Likelihood</label><select class="form-input" id="ect-likelihood"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-input" id="ect-notes"></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-edit-contact')">Cancel</button><button class="btn btn-primary" onclick="saveEditContact()">Save</button></div></div></div>
+<div class="overlay" id="modal-add-interaction"><div class="modal"><div class="modal-title">Log Interaction</div><div class="form-grid"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="ai-date"></div><div class="form-group"><label class="form-label">Type</label><select class="form-input" id="ai-type"><option>LinkedIn DM</option><option>Email</option><option>Call</option><option>Met in Person</option><option>Other</option></select></div><div class="form-group full"><label class="form-label">Notes</label><textarea class="form-input" id="ai-notes" placeholder="What did you discuss?"></textarea></div><div class="form-group full"><label class="form-label">Next Action</label><input class="form-input" id="ai-next" placeholder="e.g. Follow up in 1 week"></div><div class="form-group"><label class="form-label">Set Follow-up Date</label><input type="date" class="form-input" id="ai-followup"></div><div class="form-group full"><label class="form-label">Follow-up Comment</label><input class="form-input" id="ai-followup-comment" placeholder="What do you want to follow up about?"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-interaction')">Cancel</button><button class="btn btn-primary" onclick="addInteraction()">Log It</button></div></div></div>
+<div class="overlay" id="modal-add-referral"><div class="modal"><div class="modal-title">Link Referral to Position</div><div class="form-grid"><div class="form-group full"><label class="form-label">Position</label><select class="form-input" id="ar-position"><option value="">— select —</option></select></div><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="ar-date"></div><div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ar-status"><option>Pending</option><option>Confirmed</option></select></div><div class="form-group full"><label class="form-label">Notes</label><input class="form-input" id="ar-notes" placeholder="e.g. submitted via portal"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-referral')">Cancel</button><button class="btn btn-primary" onclick="addReferral()">Link Referral</button></div></div></div>
+<div class="overlay" id="modal-add-intel"><div class="modal"><div class="modal-title">Add Insight</div><div class="form-grid"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="ig-date"></div><div class="form-group"><label class="form-label">Source</label><select class="form-input" id="ig-source"><optgroup label="── Contacts ──" id="ig-contacts-group"></optgroup><optgroup label="── Other Sources ──"><option value="Online / LinkedIn">Online / LinkedIn</option><option value="News / Press">News / Press</option><option value="Job Posting">Job Posting</option><option value="Recruiter">Recruiter</option><option value="Event / Meetup">Event / Meetup</option><option value="Own Research">Own Research</option><option value="Other">Other</option></optgroup></select></div><div class="form-group full"><label class="form-label">Insight *</label><textarea class="form-input" id="ig-note" rows="4" placeholder="What did you learn?"></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('modal-add-intel')">Cancel</button><button class="btn btn-primary" onclick="addIntelligence()">Save Insight</button></div></div></div>
+
+<div class="toast" id="toast"><div class="toast-dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+let currentCompanyId=null,currentContactId=null,editPositionId=null,allActivePositions=[];
+
+const STATUS_COLORS={
+  Tracking:'var(--s-tracking)',Targeting:'var(--s-targeting)',Applied:'var(--s-applied)',
+  Interview:'var(--s-interview)',Offer:'var(--s-offer)',Rejected:'var(--s-rejected)',
+  Closed:'var(--s-closed)',Warm:'var(--s-warm)'
+};
+
+function showPanel(name,id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const nav=document.querySelector(`[data-panel="${name}"]`);
+  if(nav){nav.classList.add('active');const ico=nav.querySelector('.nav-icon');if(ico)ico.style.background='var(--accent)';}
+  document.querySelectorAll('.nav-item:not(.active) .nav-icon').forEach(i=>i.style.background='var(--text3)');
+  if(name==='dashboard')loadDashboard();
+  if(name==='companies')loadCompanies();
+  if(name==='company-detail'&&id){currentCompanyId=id;loadCompanyDetail(id);}
+  if(name==='contact-detail'&&id){currentContactId=id;loadContactDetail(id);}
+}
+function goBackToCompany(){showPanel('company-detail',currentCompanyId);}
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');el.classList.add('active');
+}
+
+const fmt=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+const today=()=>new Date().toISOString().slice(0,10);
+function daysUntil(d){if(!d)return null;return Math.round((new Date(d+'T00:00:00')-new Date(today()+'T00:00:00'))/864e5);}
+function lhColor(l){return l==='High'?'var(--green)':l==='Medium'?'var(--amber)':'var(--text3)';}
+
+function statusPill(s){
+  const m={Tracking:'tracking',Warm:'warm',Active:'active',Closed:'closed',Applied:'applied',Interview:'interview',Rejected:'rejected',Offer:'offer',Targeting:'targeting'};
+  return `<span class="pill pill-${m[s]||'tracking'}">${s}</span>`;
+}
+function warmthPill(w){return `<span class="w-pill w-${w.replace(/ /g,'')}">${w}</span>`;}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function showToast(msg,err=false){
+  document.getElementById('toast-msg').textContent=msg;
+  document.getElementById('toast-dot').style.background=err?'var(--red)':'var(--green)';
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function deadlineText(dateStr){
+  if(!dateStr)return{text:'No deadline',cls:'none'};
+  const days=daysUntil(dateStr);
+  if(days<0)return{text:`Expired ${Math.abs(days)}d ago`,cls:'urgent'};
+  if(days===0)return{text:'Today',cls:'urgent'};
+  if(days<=7)return{text:`${fmt(dateStr)} · ${days}d left`,cls:'urgent'};
+  if(days<=14)return{text:`${fmt(dateStr)} · ${days}d left`,cls:'soon'};
+  return{text:fmt(dateStr),cls:'ok'};
+}
+
+async function loadDashboard(){
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const res=await fetch('/api/dashboard');
+  const d=await res.json();
+  document.getElementById('s-companies').textContent=d.stats.companies;
+  document.getElementById('s-contacts').textContent=d.stats.contacts;
+  document.getElementById('s-positions').textContent=d.stats.positions;
+  document.getElementById('s-active').textContent=d.stats.active_positions;
+
+  // Pipeline chips in AP header
+  const pipeOrder=['Tracking','Targeting','Applied','Interview','Offer','Rejected','Closed'];
+  const pipeMap={};d.pipeline.forEach(p=>pipeMap[p.status]=p.count);
+  document.getElementById('pipeline').innerHTML=pipeOrder.filter(s=>pipeMap[s]).map(s=>
+    `<div class="pipe-chip"><div class="pipe-dot" style="background:${STATUS_COLORS[s]||'#8a8078'}"></div><span class="pipe-count">${pipeMap[s]}</span><span class="pipe-name">${s}</span></div>`
+  ).join('')||'';
+
+  allActivePositions=d.active_positions;
+  filterPositions();
+
+  // Follow-ups
+  const dueList=document.getElementById('due-list');
+  const noDue=document.getElementById('no-due');
+  if(!d.due.length){dueList.innerHTML='';noDue.style.display='block';}
+  else{
+    noDue.style.display='none';
+    dueList.innerHTML=d.due.map(c=>{
+      const od=c.days_overdue;
+      let label,labelCls,barColor;
+      if(od>0){label=`${od}d overdue`;labelCls='fu-overdue';barColor='var(--red)';}
+      else if(od===0){label='Due today';labelCls='fu-today';barColor='var(--amber)';}
+      else{
+        const days=Math.abs(od);
+        label=`Due ${fmt(c.followup_date)}${days<=7?' · '+days+'d':''}`;
+        labelCls='fu-future';barColor='var(--green)';
+      }
+      return `<div class="fu-row">
+        <div style="display:flex;gap:11px;align-items:flex-start;">
+          <div class="fu-bar" style="background:${barColor}"></div>
+          <div>
+            <div class="fu-name" onclick="showPanel('contact-detail',${c.id})">${c.name}</div>
+            <div class="fu-meta">${c.role||'Contact'} @ ${c.company_name}</div>
+            ${c.followup_comment?`<div class="fu-comment">"${c.followup_comment}"</div>`:''}
+          </div>
+        </div>
+        <span class="fu-label ${labelCls}">${label}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function hashColor(str){
+  const palette=[
+    '#7c5c3e','#3b7fc4','#7c3aed','#2d6a4f','#b5580a',
+    '#c05c7e','#2d7a7a','#8b6a3e','#4a6fa5','#6b4c9a',
+    '#2e7d32','#8c4a00','#5c6bc0','#00695c','#ad1457'
+  ];
+  let hash=0;for(let i=0;i<str.length;i++)hash=str.charCodeAt(i)+((hash<<5)-hash);
+  return palette[Math.abs(hash)%palette.length];
+}
+
+function filterPositions(){
+  const search=(document.getElementById('pos-search')?.value||'').toLowerCase();
+  const sort=document.getElementById('pos-sort')?.value||'deadline';
+  let positions=[...allActivePositions];
+  if(search)positions=positions.filter(p=>p.title.toLowerCase().includes(search)||p.company_name.toLowerCase().includes(search));
+  if(sort==='company')positions.sort((a,b)=>a.company_name.localeCompare(b.company_name));
+  else if(sort==='status')positions.sort((a,b)=>a.status.localeCompare(b.status));
+  else positions.sort((a,b)=>{
+    if(!a.date_found&&!b.date_found)return 0;
+    if(!a.date_found)return 1;if(!b.date_found)return-1;
+    return a.date_found.localeCompare(b.date_found);
+  });
+  const list=document.getElementById('active-pos-list');
+  const noPos=document.getElementById('no-active-pos');
+  if(!positions.length){list.innerHTML='';noPos.style.display='block';return;}
+  noPos.style.display='none';
+
+  list.innerHTML=positions.map(p=>{
+    const dl=deadlineText(p.date_found);
+    const statusCls=p.status.toLowerCase().replace(/ /g,'-');
+    const dotColor=STATUS_COLORS[p.status]||'#8a8078';
+    const refPill=p.referral_count>0
+      ?`<span class="ref-pill has">🤝 ${p.referral_count}${p.referral_count>1?' referrals':' referral'}</span>`
+      :`<span class="ref-pill none">No referral</span>`;
+    const companyColor=hashColor(p.company_name);
+    return `<div class="pos-card" onclick="showPanel('company-detail',${p.company_id})">
+      <div class="pos-card-bar" style="background:${companyColor}"></div>
+      <div class="pos-card-inner">
+        <div class="pos-company-row">
+            <div class="pos-company-dot" style="background:${companyColor}"></div>
+            <div class="pos-company" style="color:${companyColor}">${p.company_name}</div>
+          </div>
+          <div class="pos-title">${p.title}</div>
+          ${p.status_note?`<div class="pos-note">"${p.status_note}"</div>`:''}
+          <div style="flex:1"></div>
+        <div class="pos-card-footer">
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+            ${statusPill(p.status)}
+            <span class="pos-deadline ${dl.cls}">${dl.text}</span>
+          </div>
+          ${refPill}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCompanies(){
+  const search=document.getElementById('company-search')?.value||'';
+  const status=document.getElementById('company-status-filter')?.value||'';
+  const res=await fetch(`/api/companies?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`);
+  const companies=await res.json();
+  document.getElementById('company-count').textContent=companies.length+' companies';
+  const grid=document.getElementById('company-grid');
+  grid.innerHTML=companies.length?companies.map(c=>`
+    <div class="company-card" onclick="showPanel('company-detail',${c.id})">
+      <div class="co-name"><span>${c.name}</span>${statusPill(c.status)}</div>
+      <div class="co-meta">${[c.industry,c.size,c.location].filter(Boolean).join(' · ')||'No details yet'}</div>
+      <div class="co-stats"><div><strong>${c.position_count}</strong> positions</div><div><strong>${c.contact_count}</strong> contacts</div></div>
+    </div>`
+  ).join(''):'<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">🏢</div>No companies yet</div>';
+}
+
+async function addCompany(){
+  const name=document.getElementById('ac-name').value.trim();
+  if(!name){showToast('Company name required',true);return;}
+  const res=await fetch('/api/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,industry:document.getElementById('ac-industry').value,size:document.getElementById('ac-size').value,location:document.getElementById('ac-location').value,status:document.getElementById('ac-status').value,why:document.getElementById('ac-why').value,notes:document.getElementById('ac-notes').value})});
+  const r=await res.json();
+  closeModal('modal-add-company');showToast('Company added!');
+  ['ac-name','ac-industry','ac-location','ac-why','ac-notes'].forEach(id=>document.getElementById(id).value='');
+  showPanel('company-detail',r.id);
+}
+
+async function loadCompanyDetail(id){
+  const res=await fetch(`/api/companies/${id}`);
+  const d=await res.json();const c=d.company;currentCompanyId=id;
+  document.getElementById('cd-name').textContent=c.name;
+  document.getElementById('cd-status-badge').innerHTML=statusPill(c.status);
+  document.getElementById('cd-industry').textContent=c.industry||'';
+  document.getElementById('cd-size').textContent=c.size||'';
+  document.getElementById('cd-location').textContent=c.location||'';
+  const whyEl=document.getElementById('cd-why');
+  if(c.why){whyEl.textContent=`"${c.why}"`;whyEl.style.display='block';}else whyEl.style.display='none';
+
+  const tbody=document.getElementById('cd-positions');const noPos=document.getElementById('no-positions');
+  if(!d.positions.length){tbody.innerHTML='';noPos.style.display='block';}
+  else{
+    noPos.style.display='none';
+    tbody.innerHTML=d.positions.map(p=>`<tr>
+      <td><div style="font-weight:600;">${p.title}</div>${p.status_note?`<div class="status-note-cell">"${p.status_note}"</div>`:''
+      }${p.url?`<a href="${p.url}" target="_blank" style="color:var(--accent);font-size:11px;font-weight:500;">View ↗</a>`:''}</td>
+      <td style="color:var(--text3)">${p.department||'—'}</td>
+      <td style="color:var(--text3);white-space:nowrap;">${fmt(p.date_found)}</td>
+      <td>${statusPill(p.status)}</td>
+      <td>${p.referral_count>0?`<span class="ref-chip-small">🤝 ${p.referral_count}</span>`:'<span style="color:var(--text3);font-size:11px;">—</span>'}</td>
+      <td class="notes-cell">${p.notes?p.notes.slice(0,60)+(p.notes.length>60?'…':''):'—'}</td>
+      <td style="white-space:nowrap;"><button class="btn-icon" onclick="openEditPosition(${p.id})">✏</button><button class="btn-icon" onclick="deletePosition(${p.id})">✕</button></td>
+    </tr>`).join('');
+  }
+
+  const cWrap=document.getElementById('cd-contacts');const noC=document.getElementById('no-contacts');
+  if(!d.contacts.length){cWrap.innerHTML='';noC.style.display='block';}
+  else{
+    noC.style.display='none';
+    cWrap.innerHTML=d.contacts.map(ct=>`
+      <div class="contact-row">
+        <div>
+          <div class="co-contact-name" onclick="showPanel('contact-detail',${ct.id})">${ct.name}</div>
+          <div class="co-contact-meta"><span>${ct.role||'No role'}</span><span>·</span><span>${ct.source}</span>${ct.last_contact?`<span>· Last: ${fmt(ct.last_contact)}</span>`:''}</div>
+          <div class="co-contact-links">${ct.linkedin?`<a href="${ct.linkedin}" target="_blank">LinkedIn ↗</a>`:''}${ct.email?`<a href="mailto:${ct.email}">${ct.email}</a>`:''}</div>
+        </div>
+        <div class="contact-right">
+          ${warmthPill(ct.warmth)}
+          <span style="font-size:11px;font-weight:600;color:${lhColor(ct.referral_likelihood)}">${ct.referral_likelihood} likelihood</span>
+          ${ct.referral_count>0?`<span class="ref-chip-small">🤝 Referred</span>`:''}
+          ${ct.followup_date?`<span style="font-size:11px;color:var(--amber);font-weight:500;">📅 ${fmt(ct.followup_date)}</span>`:''}
+        </div>
+      </div>`).join('');
+  }
+
+  const igWrap=document.getElementById('cd-intelligence');const noIg=document.getElementById('no-intelligence');
+  if(!d.intelligence.length){igWrap.innerHTML='';noIg.style.display='block';}
+  else{
+    noIg.style.display='none';
+    igWrap.innerHTML=d.intelligence.map(ig=>`
+      <div class="intel-entry">
+        <div class="intel-head"><span class="intel-source">${ig.contact_name?`via ${ig.contact_name}`:ig.source_type}</span>
+        <div style="display:flex;gap:8px;align-items:center;"><span class="intel-date">${fmt(ig.date)}</span><button class="btn-icon" onclick="deleteIntelligence(${ig.id})">✕</button></div></div>
+        <div class="intel-note">${ig.note}</div>
+      </div>`).join('');
+  }
+  const grp=document.getElementById('ig-contacts-group');
+  grp.innerHTML=d.contacts.map(ct=>`<option value="contact:${ct.id}:${ct.name}">${ct.name}${ct.role?' ('+ct.role+')':''}</option>`).join('');
+  document.getElementById('ig-date').value=today();
+}
+
+function openEditCompany(){
+  fetch(`/api/companies/${currentCompanyId}`).then(r=>r.json()).then(d=>{
+    const c=d.company;
+    ['name','industry','size','location','status','why','notes'].forEach(f=>document.getElementById('ec-'+f).value=c[f]||'');
+    openModal('modal-edit-company');
+  });
+}
+async function saveEditCompany(){
+  await fetch(`/api/companies/${currentCompanyId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('ec-name').value,industry:document.getElementById('ec-industry').value,size:document.getElementById('ec-size').value,location:document.getElementById('ec-location').value,status:document.getElementById('ec-status').value,why:document.getElementById('ec-why').value,notes:document.getElementById('ec-notes').value})});
+  closeModal('modal-edit-company');showToast('Updated!');loadCompanyDetail(currentCompanyId);
+}
+async function deleteCompany(){
+  if(!confirm('Delete this company and all its data?'))return;
+  await fetch(`/api/companies/${currentCompanyId}`,{method:'DELETE'});
+  showToast('Deleted');showPanel('companies');
+}
+
+async function addPosition(){
+  const title=document.getElementById('ap-title').value.trim();
+  if(!title){showToast('Title required',true);return;}
+  await fetch('/api/positions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company_id:currentCompanyId,title,url:document.getElementById('ap-url').value,department:document.getElementById('ap-dept').value,date_found:document.getElementById('ap-date').value||'',status:document.getElementById('ap-status').value,status_note:document.getElementById('ap-status-note').value,notes:document.getElementById('ap-notes').value})});
+  closeModal('modal-add-position');showToast('Position added!');
+  ['ap-title','ap-url','ap-dept','ap-status-note','ap-notes'].forEach(id=>document.getElementById(id).value='');
+  loadCompanyDetail(currentCompanyId);
+}
+function openEditPosition(id){
+  fetch(`/api/companies/${currentCompanyId}`).then(r=>r.json()).then(d=>{
+    const p=d.positions.find(x=>x.id===id);if(!p)return;
+    document.getElementById('ep-title').value=p.title;document.getElementById('ep-url').value=p.url||'';
+    document.getElementById('ep-dept').value=p.department||'';document.getElementById('ep-date').value=p.date_found||'';
+    document.getElementById('ep-status').value=p.status;document.getElementById('ep-status-note').value=p.status_note||'';
+    document.getElementById('ep-notes').value=p.notes||'';
+    editPositionId=id;openModal('modal-edit-position');
+  });
+}
+async function saveEditPosition(){
+  await fetch(`/api/positions/${editPositionId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:document.getElementById('ep-title').value,url:document.getElementById('ep-url').value,department:document.getElementById('ep-dept').value,date_found:document.getElementById('ep-date').value,status:document.getElementById('ep-status').value,status_note:document.getElementById('ep-status-note').value,notes:document.getElementById('ep-notes').value})});
+  closeModal('modal-edit-position');showToast('Updated!');loadCompanyDetail(currentCompanyId);
+}
+async function deletePosition(id){
+  if(!confirm('Delete this position?'))return;
+  await fetch(`/api/positions/${id}`,{method:'DELETE'});showToast('Deleted');loadCompanyDetail(currentCompanyId);
+}
+
+async function addContact(){
+  const name=document.getElementById('act-name').value.trim();
+  if(!name){showToast('Name required',true);return;}
+  await fetch('/api/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company_id:currentCompanyId,name,role:document.getElementById('act-role').value,source:document.getElementById('act-source').value,linkedin:document.getElementById('act-linkedin').value,email:document.getElementById('act-email').value,warmth:document.getElementById('act-warmth').value,referral_likelihood:document.getElementById('act-likelihood').value,notes:document.getElementById('act-notes').value})});
+  closeModal('modal-add-contact');showToast('Contact added!');
+  ['act-name','act-role','act-linkedin','act-email','act-notes'].forEach(id=>document.getElementById(id).value='');
+  loadCompanyDetail(currentCompanyId);
+}
+
+async function loadContactDetail(id){
+  const res=await fetch(`/api/contacts/${id}`);
+  const d=await res.json();const c=d.contact;
+  currentContactId=id;if(c.company_id)currentCompanyId=c.company_id;
+  document.getElementById('ctd-name').textContent=c.name;
+  document.getElementById('ctd-role-company').textContent=`${c.role||'No role'} · ${c.company_name}`;
+  document.getElementById('ctd-badges').innerHTML=`${warmthPill(c.warmth)}<span class="pill" style="background:var(--bg3);color:${lhColor(c.referral_likelihood)};border:1px solid var(--border2);">${c.referral_likelihood} likelihood</span><span class="pill" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2);">${c.source}</span>`;
+  document.getElementById('ctd-links').innerHTML=[c.linkedin?`<a href="${c.linkedin}" target="_blank" class="btn btn-ghost btn-sm">LinkedIn ↗</a>`:'',c.email?`<a href="mailto:${c.email}" class="btn btn-ghost btn-sm">✉ ${c.email}</a>`:''].join('');
+
+  const iList=document.getElementById('ctd-interactions'),noI=document.getElementById('no-interactions');
+  if(!d.interactions.length){iList.innerHTML='';noI.style.display='block';}
+  else{noI.style.display='none';iList.innerHTML=d.interactions.map(i=>`<div class="interaction"><div class="int-head"><span class="int-type">${i.type}</span><div style="display:flex;gap:8px;align-items:center;"><span class="int-date">${fmt(i.date)}</span><button class="btn-icon" onclick="deleteInteraction(${i.id})">✕</button></div></div><div class="int-notes">${i.notes||'—'}</div>${i.next_action?`<div class="int-next">→ ${i.next_action}</div>`:''}</div>`).join('');}
+
+  const rList=document.getElementById('ctd-referrals'),noR=document.getElementById('no-referrals');
+  if(!d.referrals.length){rList.innerHTML='';noR.style.display='block';}
+  else{noR.style.display='none';rList.innerHTML=d.referrals.map(r=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);"><div><div style="font-size:13px;font-weight:500;">${r.position_title}</div><div style="font-size:11px;color:var(--text3);">${fmt(r.date)} · ${r.status}${r.notes?' · '+r.notes:''}</div></div><button class="btn-icon" onclick="deleteReferral(${r.id})">✕</button></div>`).join('');}
+
+  document.getElementById('ctd-followup').value=c.followup_date||'';
+  document.getElementById('ctd-followup-comment').value=c.followup_comment||'';
+  document.getElementById('ctd-followup-current').textContent=c.followup_date?`Set for: ${fmt(c.followup_date)}`:'No follow-up set';
+  document.getElementById('ctd-notes').value=c.notes||'';
+
+  const posSelect=document.getElementById('ar-position');
+  posSelect.innerHTML='<option value="">— select —</option>';
+  d.positions.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=`${p.title} (${p.status})`;posSelect.appendChild(o);});
+  document.getElementById('ai-date').value=today();document.getElementById('ar-date').value=today();
+}
+
+function openEditContact(){
+  fetch(`/api/contacts/${currentContactId}`).then(r=>r.json()).then(d=>{
+    const c=d.contact;
+    document.getElementById('ect-name').value=c.name;document.getElementById('ect-role').value=c.role||'';
+    document.getElementById('ect-source').value=c.source;document.getElementById('ect-linkedin').value=c.linkedin||'';
+    document.getElementById('ect-email').value=c.email||'';document.getElementById('ect-warmth').value=c.warmth;
+    document.getElementById('ect-likelihood').value=c.referral_likelihood;document.getElementById('ect-notes').value=c.notes||'';
+    openModal('modal-edit-contact');
+  });
+}
+async function saveEditContact(){
+  await fetch(`/api/contacts/${currentContactId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('ect-name').value,role:document.getElementById('ect-role').value,source:document.getElementById('ect-source').value,linkedin:document.getElementById('ect-linkedin').value,email:document.getElementById('ect-email').value,warmth:document.getElementById('ect-warmth').value,referral_likelihood:document.getElementById('ect-likelihood').value,followup_date:document.getElementById('ctd-followup').value||null,followup_comment:document.getElementById('ctd-followup-comment').value,notes:document.getElementById('ect-notes').value})});
+  closeModal('modal-edit-contact');showToast('Updated!');loadContactDetail(currentContactId);
+}
+async function deleteContact(){
+  if(!confirm('Delete this contact?'))return;
+  await fetch(`/api/contacts/${currentContactId}`,{method:'DELETE'});showToast('Deleted');showPanel('company-detail',currentCompanyId);
+}
+async function saveFollowup(){
+  const res=await fetch(`/api/contacts/${currentContactId}`);const d=await res.json();const c=d.contact;
+  const fd=document.getElementById('ctd-followup').value;const fc=document.getElementById('ctd-followup-comment').value;
+  await fetch(`/api/contacts/${currentContactId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...c,followup_date:fd||null,followup_comment:fc})});
+  showToast('Follow-up saved!');document.getElementById('ctd-followup-current').textContent=fd?`Set for: ${fmt(fd)}`:'No follow-up set';
+}
+async function clearFollowup(){document.getElementById('ctd-followup').value='';document.getElementById('ctd-followup-comment').value='';await saveFollowup();}
+async function saveContactNotes(){
+  const res=await fetch(`/api/contacts/${currentContactId}`);const d=await res.json();const c=d.contact;
+  await fetch(`/api/contacts/${currentContactId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...c,notes:document.getElementById('ctd-notes').value})});
+  showToast('Notes saved!');
+}
+async function addInteraction(){
+  await fetch('/api/interactions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contact_id:currentContactId,date:document.getElementById('ai-date').value,type:document.getElementById('ai-type').value,notes:document.getElementById('ai-notes').value,next_action:document.getElementById('ai-next').value,followup_date:document.getElementById('ai-followup').value||null,followup_comment:document.getElementById('ai-followup-comment').value})});
+  closeModal('modal-add-interaction');showToast('Logged!');
+  ['ai-notes','ai-next','ai-followup','ai-followup-comment'].forEach(id=>document.getElementById(id).value='');
+  loadContactDetail(currentContactId);
+}
+async function deleteInteraction(id){if(!confirm('Delete?'))return;await fetch(`/api/interactions/${id}`,{method:'DELETE'});showToast('Deleted');loadContactDetail(currentContactId);}
+async function addReferral(){
+  const posId=document.getElementById('ar-position').value;
+  if(!posId){showToast('Select a position',true);return;}
+  const res=await fetch('/api/referrals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contact_id:currentContactId,position_id:parseInt(posId),date:document.getElementById('ar-date').value,status:document.getElementById('ar-status').value,notes:document.getElementById('ar-notes').value})});
+  const r=await res.json();
+  if(r.status==='exists'){showToast('Already linked',true);return;}
+  closeModal('modal-add-referral');showToast('Referral linked!');loadContactDetail(currentContactId);
+}
+async function deleteReferral(id){if(!confirm('Remove?'))return;await fetch(`/api/referrals/${id}`,{method:'DELETE'});showToast('Removed');loadContactDetail(currentContactId);}
+async function addIntelligence(){
+  const note=document.getElementById('ig-note').value.trim();
+  if(!note){showToast('Note required',true);return;}
+  const sourceVal=document.getElementById('ig-source').value;
+  let sourceType=sourceVal,contactId=null;
+  if(sourceVal.startsWith('contact:')){const parts=sourceVal.split(':');contactId=parseInt(parts[1]);sourceType=parts[2];}
+  await fetch('/api/intelligence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({company_id:currentCompanyId,date:document.getElementById('ig-date').value||today(),source_type:sourceType,contact_id:contactId,note})});
+  closeModal('modal-add-intel');showToast('Insight saved!');document.getElementById('ig-note').value='';
+  loadCompanyDetail(currentCompanyId);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-intelligence').classList.add('active');
+  document.querySelectorAll('.tab')[2].classList.add('active');
+}
+async function deleteIntelligence(id){if(!confirm('Delete?'))return;await fetch(`/api/intelligence/${id}`,{method:'DELETE'});showToast('Deleted');loadCompanyDetail(currentCompanyId);}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('ap-date').value=today();
+  loadDashboard();
+});
+</script>
+</body>
+</html>
